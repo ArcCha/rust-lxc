@@ -1,0 +1,4 @@
+[package]
+name = "rust-lxc"
+version = "0.0.1"
+authors = ["Adam Piekarczyk <adam1piekarczyk@gmail.com>"]
