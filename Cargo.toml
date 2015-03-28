@@ -2,3 +2,12 @@
 name = "rust-lxc"
 version = "0.0.1"
 authors = ["Adam Piekarczyk <adam1piekarczyk@gmail.com>"]
+
+[dependencies]
+libc = "0.1.4"
+
+[lib]
+name = "lxc"
+
+[[bin]]
+name = "lxc"
