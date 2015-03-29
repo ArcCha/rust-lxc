@@ -11,3 +11,11 @@ pub fn version() -> String {
     str::from_utf8(bytes).ok().expect("Invalid UTF8 string").to_string()
   }
 }
+
+impl ffi::LxcSnapshot {
+  fn free(&mut self) {
+    unsafe {
+      (self.free)(self)
+    }
+  }
+}
