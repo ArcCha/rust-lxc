@@ -42,6 +42,14 @@ pub struct LxcSnapshot {
 }
 
 #[repr(C)]
+pub struct LxcLock;
+
+#[repr(C)]
 pub struct LxcContainer {
   pub name: *mut c_char,
+  pub configfile: *mut c_char,
+  pub pidfile: *mut c_char,
+  pub slock: *mut LxcLock,
+  pub privlock: *mut LxcLock,
+  pub numthreads: c_int,
 }
