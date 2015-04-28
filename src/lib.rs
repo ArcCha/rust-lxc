@@ -1,21 +1,42 @@
 extern crate libc;
 
-use std::ffi::CStr;
-use std::str;
 mod ffi;
+mod helper;
+use helper::*;
 
 pub fn version() -> String {
   unsafe {
     let ptr = ffi::lxc_get_version();
-    let bytes = CStr::from_ptr(ptr).to_bytes();
-    str::from_utf8(bytes).ok().expect("Invalid UTF8 string").to_string()
+    ptr_to_str(ptr)
   }
 }
 
-impl ffi::LxcSnapshot {
-  fn free(&mut self) {
-    unsafe {
-      (self.free)(self)
+// impl ffi::LxcSnapshot {
+//   fn free(&mut self) {
+//     unsafe {
+//       (self.free)(self)
+//     }
+//   }
+// }
+
+pub struct LxcContainer {
+    container: *mut ffi::LxcContainer
+}
+
+impl LxcContainer {
+  pub fn new(name: &str, configpath: &str) -> Option<LxcContainer> {
+    let tmp = LxcContainer {
+      container: unsafe {
+        ffi::lxc_container_new(str_to_ptr(name),
+                               str_to_ptr(configpath))
+      }
+    };
+
+    if tmp.container.is_null() {
+      None
+    }
+    else {
+      Some(tmp)
     }
   }
 }

@@ -46,10 +46,11 @@ pub struct LxcLock;
 
 #[repr(C)]
 pub struct LxcContainer {
-  pub name: *mut c_char,
-  pub configfile: *mut c_char,
-  pub pidfile: *mut c_char,
-  pub slock: *mut LxcLock,
-  pub privlock: *mut LxcLock,
-  pub numthreads: c_int,
+  name: *mut c_char,
+  configfile: *mut c_char,
+  pidfile: *mut c_char,
+  slock: *mut LxcLock,
+  privlock: *mut LxcLock,
+  numthreads: c_int,
+
 }
