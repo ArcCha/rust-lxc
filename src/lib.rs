@@ -3,6 +3,7 @@ extern crate libc;
 mod ffi;
 mod helper;
 use helper::*;
+use std::ptr;
 
 pub fn version() -> String {
   unsafe {
@@ -27,8 +28,14 @@ impl LxcContainer {
   pub fn new(name: &str, configpath: &str) -> Option<LxcContainer> {
     let tmp = LxcContainer {
       container: unsafe {
-        ffi::lxc_container_new(str_to_ptr(name),
-                               str_to_ptr(configpath))
+        if configpath == "" {
+          ffi::lxc_container_new(str_to_ptr(name),
+                                 ptr::null::<libc::c_char>())
+        }
+        else {
+          ffi::lxc_container_new(str_to_ptr(name),
+                                 str_to_ptr(configpath))
+        }
       }
     };
 
@@ -37,6 +44,12 @@ impl LxcContainer {
     }
     else {
       Some(tmp)
+    }
+  }
+
+  pub fn is_defined(&self) -> bool {
+    unsafe {
+      ((*self.container).is_defined)(self.container) != 0
     }
   }
 
