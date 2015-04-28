@@ -6,7 +6,10 @@ fn main() {
   let container = LxcContainer::new("test",
                                     "/home/arccha/programowanie/rust-lxc/test.txt");
   match container {
-    Some(c) => println!("Created lxc container struct."),
+    Some(c) => {
+      println!("Created lxc container struct.");
+      if c.rename("test2") { println!("Renamed"); } else { println!("Rename failed"); }
+   },
     None => println!("Fail")
   }
   

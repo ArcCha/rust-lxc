@@ -39,4 +39,10 @@ impl LxcContainer {
       Some(tmp)
     }
   }
+
+  pub fn rename(&self, new_name: &str) -> bool {
+    unsafe {
+      ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
+    }
+  }
 }
