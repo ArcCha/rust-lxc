@@ -93,6 +93,19 @@ impl LxcContainer {
     }
   }
 
+  pub fn start(&self, use_init: i32, argv: Vec<&str>) -> bool {
+    unsafe {
+      let mut argv_ptr = ptr::null::<*const libc::c_char>();
+      if !argv.is_empty() {
+        argv_ptr = argv.iter()
+                   .map(|s| str_to_ptr(s))
+                   .collect::<Vec<*const libc::c_char>>()
+                   .as_ptr() as *const*const libc::c_char
+      }                               
+      ((*self.container).start)(self.container, use_init, argv_ptr) != 0
+    }
+  }
+
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
       ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
