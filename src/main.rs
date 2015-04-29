@@ -19,6 +19,8 @@ fn main() {
       println!("State: {}", c.state());
       println!("Unfreeze: {}", c.unfreeze());
       println!("State: {}", c.state());
+      println!("Stop: {}", c.stop());
+      println!("State: {}", c.state());
    },
     None => println!("Fail")
   }
