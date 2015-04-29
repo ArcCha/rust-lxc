@@ -25,16 +25,16 @@ pub struct LxcContainer {
 }
 
 impl LxcContainer {
-  pub fn new(name: &str, configpath: &str) -> Option<LxcContainer> {
+  pub fn new(name: &str, config_path: &str) -> Option<LxcContainer> {
     let tmp = LxcContainer {
       container: unsafe {
-        if configpath == "" {
+        if config_path == "" {
           ffi::lxc_container_new(str_to_ptr(name),
                                  ptr::null::<libc::c_char>())
         }
         else {
           ffi::lxc_container_new(str_to_ptr(name),
-                                 str_to_ptr(configpath))
+                                 str_to_ptr(config_path))
         }
       }
     };
@@ -56,6 +56,40 @@ impl LxcContainer {
   pub fn state(&self) -> String { // maybe define an enum with possible states instead returning String?
     unsafe {
       ptr_to_str(((*self.container).state)(self.container))
+    }
+  }
+
+  pub fn is_running(&self) -> bool {
+    unsafe {
+      ((*self.container).is_running)(self.container) != 0
+    }
+  }
+
+  pub fn freeze(&self) -> bool {
+    unsafe {
+      ((*self.container).freeze)(self.container) != 0
+    }
+  }
+
+  pub fn unfreeze(&self) -> bool {
+    unsafe {
+      ((*self.container).unfreeze)(self.container) != 0
+    }
+  }
+
+  pub fn init_pid(&self) -> i32 {
+    unsafe {
+      ((*self.container).init_pid)(self.container)
+    }
+  }
+
+  pub fn load_config(&self, config_path: &str) -> bool {
+    unsafe {
+      let mut config_path_ptr = ptr::null::<libc::c_char>();
+      if config_path != "" {
+        config_path_ptr = str_to_ptr(config_path);
+      }
+      ((*self.container).load_config)(self.container, config_path_ptr) != 0
     }
   }
 
