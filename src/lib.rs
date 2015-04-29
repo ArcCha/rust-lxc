@@ -53,6 +53,12 @@ impl LxcContainer {
     }
   }
 
+  pub fn state(&self) -> String { // maybe define an enum with possible states instead returning String?
+    unsafe {
+      ptr_to_str(((*self.container).state)(self.container))
+    }
+  }
+
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
       ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
