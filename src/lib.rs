@@ -112,6 +112,54 @@ impl LxcContainer {
     }
   }
 
+  pub fn want_daemonize(&self, state: bool) -> bool {
+    unsafe {
+      ((*self.container).want_daemonize)(self.container, state as libc::c_char) != 0
+    }
+  }
+
+  pub fn want_close_all_fds(&self, state: bool) -> bool {
+    unsafe {
+      ((*self.container).want_close_all_fds)(self.container, state as libc::c_char) != 0
+    }
+  }
+
+  pub fn config_file_name(&self) -> String {
+    unsafe {
+      ptr_to_str(((*self.container).config_file_name)(self.container))
+    }
+  }
+
+  pub fn wait(&self, state: &str, timeout: i32) -> bool {
+    unsafe {
+      ((*self.container).wait)(self.container, str_to_ptr(state), timeout as libc::c_int) != 0
+    }
+  }
+
+  pub fn set_config_item(&self, key: &str, value: &str) -> bool {
+    unsafe {
+      ((*self.container).set_config_item)(self.container, str_to_ptr(key), str_to_ptr(value)) != 0
+    }
+  }
+
+  pub fn destroy(&self) -> bool {
+    unsafe {
+      ((*self.container).destroy)(self.container) != 0
+    }
+  }
+
+  pub fn destroy_with_snapshots(&self) -> bool {
+    unsafe {
+      ((*self.container).destroy_with_snapshots)(self.container) != 0
+    }
+  }
+
+  pub fn save_config(&self, alt_file: &str) -> bool {
+    unsafe {
+      ((*self.container).save_config)(self.container, str_to_ptr(alt_file)) != 0
+    }
+  }
+
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
       ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
