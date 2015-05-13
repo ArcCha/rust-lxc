@@ -1,19 +1,18 @@
-use libc::{c_char, c_void, c_int, c_short, c_long, pid_t, gid_t, uid_t, uint64_t};
+use libc::{c_char, c_void, c_int, pid_t, uint64_t};
 
 pub mod lxclock;
 use self::lxclock::LxcLock; // self::lxclock::* do not work - why?
 pub mod attach_options;
 use self::attach_options::*;
 
-// Not sure if it should be here
-pub const LXC_CLONE_KEEPNAME        : u8 = 1 << 0;
-pub const LXC_CLONE_KEEPMACADDR     : u8 = 1 << 1;
-pub const LXC_CLONE_SNAPSHOT        : u8 = 1 << 2;
-pub const LXC_CLONE_KEEPBDEVTYPE    : u8 = 1 << 3;
-pub const LXC_CLONE_MAYBE_SNAPSHOT  : u8 = 1 << 4;
-pub const LXC_CLONE_MAXFLAGS        : u8 = 1 << 5;
-pub const LXC_CREATE_QUIET          : u8 = 1 << 0;
-pub const LXC_CREATE_MAXFLAGS       : u8 = 1 << 1;
+pub const LXC_CLONE_KEEPNAME        : u8 = 0x01;
+pub const LXC_CLONE_KEEPMACADDR     : u8 = 0x02;
+pub const LXC_CLONE_SNAPSHOT        : u8 = 0x04;
+pub const LXC_CLONE_KEEPBDEVTYPE    : u8 = 0x08;
+pub const LXC_CLONE_MAYBE_SNAPSHOT  : u8 = 0x10;
+pub const LXC_CLONE_MAXFLAGS        : u8 = 0x20;
+pub const LXC_CREATE_QUIET          : u8 = 0x01;
+pub const LXC_CREATE_MAXFLAGS       : u8 = 0x02;
 
 #[link(name = "lxc")]
 extern {
@@ -46,15 +45,8 @@ pub struct LxcSnapshot {
     pub free: extern fn(s: *mut LxcSnapshot),
 }
 
-// BEGIN ---------- lxclock.h -------------
-// END ---------- lxclock.h ------------- 
-
 #[repr(C)]
 pub struct LxcConf;
-
-
-// BEGIN ---------- attach_options.h ------------- 
-// END ---------- attach_options.h ------------- 
 
 #[repr(C)]
 pub struct LxcContainer {
