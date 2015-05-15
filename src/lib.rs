@@ -5,6 +5,12 @@ mod helper;
 use helper::*;
 use std::ptr;
 
+/// Returns liblxc version.
+///
+/// # Example
+/// ```
+/// let lxc_version = liblxc::version();
+/// ```
 pub fn version() -> String {
   unsafe {
     let ptr = ffi::lxc_get_version();
@@ -20,12 +26,29 @@ pub fn version() -> String {
 //   }
 // }
 
+/// Struct representing lxc container.
 pub struct LxcContainer {
     container: *mut ffi::LxcContainer
 }
 
 impl LxcContainer {
-  pub fn new(name: &str, config_path: &str) -> Option<LxcContainer> {
+
+  /// Creates new lxc container object - it does not create lxc container in the host system.
+  ///
+  /// # Parameters
+  /// `name` - name to use for the container.
+  /// 
+  /// `config_path` - full path to optional config file. If you don't want to use any, pass empty string.
+  ///
+  /// # Return value
+  /// Returns `Ok(LxcContainer)` if the creation was sucessful, else `Err(&'static str)`.
+  ///
+  /// # Examples
+  /// ```
+  /// let c = liblxc::LxcContainer::new("example", "");
+  /// # assert!(c.is_ok())
+  /// ```
+  pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
     let tmp = LxcContainer {
       container: unsafe {
         if config_path == "" {
@@ -40,10 +63,10 @@ impl LxcContainer {
     };
 
     if tmp.container.is_null() {
-      None
+      Err("cannot create LxcContainer")
     }
     else {
-      Some(tmp)
+      Ok(tmp)
     }
   }
 

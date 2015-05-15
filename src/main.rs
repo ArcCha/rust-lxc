@@ -1,12 +1,12 @@
-extern crate lxc;
-use lxc::*;
+extern crate liblxc;
+use liblxc::*;
 
 fn main() {
-  println!("lxc version: {}", lxc::version());
+  println!("lxc version: {}", liblxc::version());
   let container = LxcContainer::new("apicontainer",
                                     "");
   match container {
-    Some(c) => {
+    Ok(c) => {
       println!("Created lxc container object.");
       if c.is_defined() { println!("Already defined"); } else { println!("Not yet defined"); }
       // if c.rename("test2") { println!("Renamed"); } else { println!("Rename failed"); }
@@ -21,8 +21,8 @@ fn main() {
       println!("State: {}", c.state());
       println!("Stop: {}", c.stop());
       println!("State: {}", c.state());
-   },
-    None => println!("Fail")
+    },
+    Err(e) => println!("{}", e)
   }
   
 }

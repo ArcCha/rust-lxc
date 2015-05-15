@@ -7,7 +7,7 @@ authors = ["Adam Piekarczyk <adam1piekarczyk@gmail.com>"]
 libc = "0.1.4"
 
 [lib]
-name = "lxc"
+name = "liblxc"
 
 [[bin]]
-name = "lxc"
+name = "main-lxc"
