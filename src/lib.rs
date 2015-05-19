@@ -208,7 +208,7 @@ impl LxcContainer {
   /// Determine if the container wants to run disconnected from the terminal.
   /// 
   /// # Parameters
-  /// state - value for the `daemonize` bit.
+  /// `state` - value for the `daemonize` bit.
   /// 
   /// # Return value
   /// Returns `true` if container wants to be daemonized, else `false`.
@@ -221,7 +221,7 @@ impl LxcContainer {
   /// Determine whether container wishes all file descriptors to be closed on startup.
   ///
   /// # Parameters
-  /// state - value for the `close_all_fds` bit
+  /// `state` - value for the `close_all_fds` bit
   ///
   /// # Return value
   /// Returns `true` if container wants all file descriptors closed, else `false`.
