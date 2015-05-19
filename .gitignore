@@ -3,3 +3,4 @@ Cargo.lock
 
 # Editor specific settings
 *.sublime-workspace
+.vagrant/
