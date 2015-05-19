@@ -26,6 +26,32 @@ pub fn version() -> String {
 //   }
 // }
 
+enum LxcCreateFlag {
+  Quiet    = 0x01,
+  Maxflags = 0x02,
+}
+
+enum LxcCloneFlag {
+  Keepname      = 0x01,
+  Keepmacaddr   = 0x02,
+  Snapshot      = 0x04,
+  Keepbdevtype  = 0x08,
+  MaybeSnapshot = 0x10,
+  Maxflags      = 0x20,
+}
+
+enum LxcAttachFlag {
+  MoveToCgroup     = 0x00000001,
+  DropCapabilities = 0x00000002,
+  SetPersonality   = 0x00000004,
+  LsmExec          = 0x00000008,
+  RemountProcSys   = 0x00010000,
+  LsmNow           = 0x00020000,
+  Default          = 0x0000FFFF,
+  // Lsm = (LsmExec | LsmNow),
+  Lsm              = 0x00020008,
+}
+
 /// Struct representing lxc container.
 pub struct LxcContainer {
     container: *mut ffi::LxcContainer
