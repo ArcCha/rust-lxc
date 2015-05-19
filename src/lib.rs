@@ -77,8 +77,8 @@ impl LxcContainer {
   pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
     let tmp = LxcContainer {
       container: unsafe {
-        ffi::lxc_container_new(str_to_ptr(name),
-                               str_to_ptr(config_path))
+        ffi::lxc_container_new(str_to_ptr(name).as_ptr(),
+                               str_to_ptr(config_path).as_ptr())
       }
     };
 
@@ -159,11 +159,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn load_config(&self, config_path: &str) -> bool {
     unsafe {
-      let mut config_path_ptr = ptr::null::<libc::c_char>();
-      if config_path != "" {
-        config_path_ptr = str_to_ptr(config_path);
-      }
-      ((*self.container).load_config)(self.container, config_path_ptr) != 0
+      ((*self.container).load_config)(self.container, str_to_ptr(config_path).as_ptr()) != 0
     }
   }
 
@@ -178,7 +174,14 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn start(&self, use_init: i32, argv: Vec<&str>) -> bool {
     unsafe {
-      let argv_ptr = vec_to_ptr(argv);                               
+      let argv_ptr = match vec_to_ptr(argv) {
+        Some(x) => x.iter()
+                    .map(|s| s.as_ptr())
+                    .collect::<Vec<*const libc::c_char>>()
+                    .as_ptr(),
+        None    => ptr::null::<*const libc::c_char>()
+      };
+
       ((*self.container).start)(self.container, use_init, argv_ptr) != 0
     }
   }
@@ -241,7 +244,7 @@ impl LxcContainer {
   /// Returns `true` if state reached within timeout, else `false`.
   pub fn wait(&self, state: &str, timeout: i32) -> bool {
     unsafe {
-      ((*self.container).wait)(self.container, str_to_ptr(state), timeout as libc::c_int) != 0
+      ((*self.container).wait)(self.container, str_to_ptr(state).as_ptr(), timeout as libc::c_int) != 0
     }
   }
 
@@ -256,7 +259,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn set_config_item(&self, key: &str, value: &str) -> bool {
     unsafe {
-      ((*self.container).set_config_item)(self.container, str_to_ptr(key), str_to_ptr(value)) != 0
+      ((*self.container).set_config_item)(self.container, str_to_ptr(key).as_ptr(), str_to_ptr(value).as_ptr()) != 0
     }
   }
 
@@ -295,7 +298,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn save_config(&self, alt_file: &str) -> bool {
     unsafe {
-      ((*self.container).save_config)(self.container, str_to_ptr(alt_file)) != 0
+      ((*self.container).save_config)(self.container, str_to_ptr(alt_file).as_ptr()) != 0
     }
   }
 
@@ -308,16 +311,22 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
-      ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
+      ((*self.container).rename)(self.container, str_to_ptr(new_name).as_ptr()) != 0
     }
   }
 
   pub fn create(&self, template: &str, bdevtype: &str, bdev_specs: BDevSpecs,
                 flags: LxcCreateFlag, argv: Vec<&str>) -> bool {
     unsafe {
-      let argv_ptr = vec_to_ptr(argv);
-      ((*self.container).create)(self.container, str_to_ptr(template),
-                                str_to_ptr(bdevtype),
+      let argv_ptr = match vec_to_ptr(argv) {
+        Some(x) => x.iter()
+                    .map(|s| s.as_ptr())
+                    .collect::<Vec<*const libc::c_char>>()
+                    .as_ptr(),
+        None    => ptr::null::<*const libc::c_char>()
+      };
+      ((*self.container).create)(self.container, str_to_ptr(template).as_ptr(),
+                                str_to_ptr(bdevtype).as_ptr(),
                                 bdev_specs.underlying, flags as libc::c_int,
                                 argv_ptr) != 0
     }

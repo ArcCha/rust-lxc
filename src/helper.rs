@@ -6,13 +6,8 @@ use std::ptr;
 /// Module containing helper functions, which will be used only internally.
 
 /// Converts from `&str` to C pointer to c-string.
-pub fn str_to_ptr(s: &str) -> *const c_char {
-  if s == "" {
-    ptr::null::<c_char>()
-  }
-  else {
-    CString::new(s).unwrap().as_ptr()
-  }
+pub fn str_to_ptr(s: &str) -> CString {
+  CString::new(s).unwrap()
 }
 
 /// Converts from C pointer to c-string to `String`.
@@ -23,14 +18,13 @@ pub fn ptr_to_str(ptr: *const c_char) -> String {
   }
 }
 
-pub fn vec_to_ptr(vec: Vec<&str>) -> *const*const c_char {
+pub fn vec_to_ptr(vec: Vec<&str>) -> Option<Vec<CString>> {
   if !vec.is_empty() {
-    vec.iter()
+    Some(vec.iter()
        .map(|s| str_to_ptr(s))
-       .collect::<Vec<*const c_char>>()
-       .as_ptr() as *const*const c_char
+       .collect::<Vec<CString>>())
   }
   else {
-    ptr::null::<*const c_char>()
+    None
   }
 }
