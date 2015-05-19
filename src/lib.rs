@@ -26,12 +26,12 @@ pub fn version() -> String {
 //   }
 // }
 
-enum LxcCreateFlag {
+pub enum LxcCreateFlag {
   Quiet    = 0x01,
   Maxflags = 0x02,
 }
 
-enum LxcCloneFlag {
+pub enum LxcCloneFlag {
   Keepname      = 0x01,
   Keepmacaddr   = 0x02,
   Snapshot      = 0x04,
@@ -40,7 +40,7 @@ enum LxcCloneFlag {
   Maxflags      = 0x20,
 }
 
-enum LxcAttachFlag {
+pub enum LxcAttachFlag {
   MoveToCgroup     = 0x00000001,
   DropCapabilities = 0x00000002,
   SetPersonality   = 0x00000004,
@@ -313,12 +313,12 @@ impl LxcContainer {
   }
 
   pub fn create(&self, template: &str, bdevtype: &str, bdev_specs: BDevSpecs,
-                flags: i32, argv: Vec<&str>) -> bool {
+                flags: LxcCreateFlag, argv: Vec<&str>) -> bool {
     unsafe {
       let argv_ptr = vec_to_ptr(argv);
       ((*self.container).create)(self.container, str_to_ptr(template),
                                 str_to_ptr(bdevtype),
-                                bdev_specs.underlying, flags,
+                                bdev_specs.underlying, flags as libc::c_int,
                                 argv_ptr) != 0
     }
   }
