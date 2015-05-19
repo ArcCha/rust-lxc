@@ -1,12 +1,12 @@
 use libc::{c_char, c_int, c_void, c_long, gid_t, uid_t, uint64_t};
 
 #[repr(C)]
-struct ZfsRoot {
+pub struct ZfsRoot {
   zfsroot: *mut c_char
 }
 
 #[repr(C)]
-struct Lvm {
+pub struct Lvm {
   vg: *mut c_char,
   lv: *mut c_char,
   thinpool: *mut c_char
@@ -15,10 +15,10 @@ struct Lvm {
 #[repr(C)]
 pub struct BDevSpecs {
   pub fstype: *mut c_char,
-  fssize: uint64_t,
-  zfs: ZfsRoot,
-  lvm: Lvm,
-  dir: *mut c_char
+  pub fssize: uint64_t,
+  pub zfs: ZfsRoot,
+  pub lvm: Lvm,
+  pub dir: *mut c_char
 }
 
 #[repr(C)]

@@ -3,10 +3,12 @@ use liblxc::*;
 
 fn main() {
   println!("lxc version: {}", liblxc::version());
-  let container = LxcContainer::new("apicontainer",
+  let container = LxcContainer::new("test",
                                     "");
   match container {
     Ok(c) => {
+      let specs = BDevSpecs::new();
+      // c.create("download", "", specs, , argv);
       println!("Created lxc container object.");
       if c.is_defined() { println!("Already defined"); } else { println!("Not yet defined"); }
       // if c.rename("test2") { println!("Renamed"); } else { println!("Rename failed"); }

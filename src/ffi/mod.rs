@@ -5,14 +5,14 @@ use self::lxclock::LxcLock; // self::lxclock::* do not work - why?
 pub mod attach_options;
 use self::attach_options::*;
 
-pub const LXC_CLONE_KEEPNAME        : u8 = 0x01;
-pub const LXC_CLONE_KEEPMACADDR     : u8 = 0x02;
-pub const LXC_CLONE_SNAPSHOT        : u8 = 0x04;
-pub const LXC_CLONE_KEEPBDEVTYPE    : u8 = 0x08;
-pub const LXC_CLONE_MAYBE_SNAPSHOT  : u8 = 0x10;
-pub const LXC_CLONE_MAXFLAGS        : u8 = 0x20;
-pub const LXC_CREATE_QUIET          : u8 = 0x01;
-pub const LXC_CREATE_MAXFLAGS       : u8 = 0x02;
+pub const LXC_CLONE_KEEPNAME        : c_int = 0x01;
+pub const LXC_CLONE_KEEPMACADDR     : c_int = 0x02;
+pub const LXC_CLONE_SNAPSHOT        : c_int = 0x04;
+pub const LXC_CLONE_KEEPBDEVTYPE    : c_int = 0x08;
+pub const LXC_CLONE_MAYBE_SNAPSHOT  : c_int = 0x10;
+pub const LXC_CLONE_MAXFLAGS        : c_int = 0x20;
+pub const LXC_CREATE_QUIET          : c_int = 0x01;
+pub const LXC_CREATE_MAXFLAGS       : c_int = 0x02;
 
 #[link(name = "lxc")]
 extern {

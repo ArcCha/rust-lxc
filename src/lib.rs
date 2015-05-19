@@ -51,14 +51,8 @@ impl LxcContainer {
   pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
     let tmp = LxcContainer {
       container: unsafe {
-        if config_path == "" {
-          ffi::lxc_container_new(str_to_ptr(name),
-                                 ptr::null::<libc::c_char>())
-        }
-        else {
-          ffi::lxc_container_new(str_to_ptr(name),
-                                 str_to_ptr(config_path))
-        }
+        ffi::lxc_container_new(str_to_ptr(name),
+                               str_to_ptr(config_path))
       }
     };
 
@@ -118,13 +112,7 @@ impl LxcContainer {
 
   pub fn start(&self, use_init: i32, argv: Vec<&str>) -> bool {
     unsafe {
-      let mut argv_ptr = ptr::null::<*const libc::c_char>();
-      if !argv.is_empty() {
-        argv_ptr = argv.iter()
-                   .map(|s| str_to_ptr(s))
-                   .collect::<Vec<*const libc::c_char>>()
-                   .as_ptr() as *const*const libc::c_char
-      }                               
+      let argv_ptr = vec_to_ptr(argv);                               
       ((*self.container).start)(self.container, use_init, argv_ptr) != 0
     }
   }
@@ -188,4 +176,27 @@ impl LxcContainer {
       ((*self.container).rename)(self.container, str_to_ptr(new_name)) != 0
     }
   }
+
+  pub fn create(&self, template: &str, bdevtype: &str, bdev_specs: BDevSpecs,
+                flags: i32, argv: Vec<&str>) -> bool {
+    unsafe {
+      let argv_ptr = vec_to_ptr(argv);
+      ((*self.container).create)(self.container, str_to_ptr(template),
+                                str_to_ptr(bdevtype),
+                                bdev_specs.underlying, flags,
+                                argv_ptr) != 0
+    }
+  }
+}
+
+pub struct BDevSpecs {
+    underlying: *mut ffi::attach_options::BDevSpecs
+}
+
+impl BDevSpecs {
+  pub fn new() -> BDevSpecs {
+    BDevSpecs {
+      underlying: ptr::null_mut::<ffi::attach_options::BDevSpecs>()
+    }
+  }  
 }
