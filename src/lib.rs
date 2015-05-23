@@ -336,9 +336,14 @@ impl LxcContainer {
         None    => ptr::null::<*const libc::c_char>()
       };
       ((*self.underlying).create)(self.underlying, str_to_ptr(template).as_ptr(),
-                                str_to_ptr(bdevtype).as_ptr(),
-                                bdev_specs.underlying, flags as libc::c_int,
-                                argv_ptr) != 0
+                                  if bdevtype == "" {
+                                    ptr::null::<libc::c_char>()
+                                  }
+                                  else {
+                                    str_to_ptr(bdevtype).as_ptr()
+                                  },
+                                  bdev_specs.underlying, 0 as libc::c_int,
+                                  argv_ptr) != 0
     }
   }
 }
