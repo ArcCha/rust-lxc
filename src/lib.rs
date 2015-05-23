@@ -48,13 +48,13 @@ pub enum LxcAttachFlag {
   RemountProcSys   = 0x00010000,
   LsmNow           = 0x00020000,
   Default          = 0x0000FFFF,
-  // Lsm = (LsmExec | LsmNow),
-  Lsm              = 0x00020008,
+  Lsm              = (LxcAttachFlag::LsmExec as isize |
+                      LxcAttachFlag::LsmNow as isize),
 }
 
 /// Struct representing lxc container.
 pub struct LxcContainer {
-    container: *mut ffi::LxcContainer
+    underlying: *mut ffi::LxcContainer
 }
 
 impl LxcContainer {
@@ -75,18 +75,26 @@ impl LxcContainer {
   /// # assert!(c.is_ok())
   /// ```
   pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
-    let tmp = LxcContainer {
-      container: unsafe {
-        ffi::lxc_container_new(str_to_ptr(name).as_ptr(),
-                               str_to_ptr(config_path).as_ptr())
+    let container = LxcContainer {
+      underlying: unsafe {
+        ffi::lxc_container_new(if name == "" {
+                                 ptr::null::<libc::c_char>()
+                               } else {
+                                 str_to_ptr(name).as_ptr()
+                               },
+                               if config_path == "" {
+                                 ptr::null::<libc::c_char>()
+                               } else {
+                                str_to_ptr(config_path).as_ptr()
+                               })
       }
     };
 
-    if tmp.container.is_null() {
+    if container.underlying.is_null() {
       Err("cannot create LxcContainer")
     }
     else {
-      Ok(tmp)
+      Ok(container)
     }
   }
 
@@ -96,7 +104,7 @@ impl LxcContainer {
   /// Returns `true` if container is defined, else `false`.
   pub fn is_defined(&self) -> bool {
     unsafe {
-      ((*self.container).is_defined)(self.container) != 0
+      ((*self.underlying).is_defined)(self.underlying) != 0
     }
   }
 
@@ -106,7 +114,7 @@ impl LxcContainer {
   /// Returns upper-case string representing state of container.
   pub fn state(&self) -> String { // maybe define an enum with possible states instead returning String?
     unsafe {
-      ptr_to_str(((*self.container).state)(self.container))
+      ptr_to_str(((*self.underlying).state)(self.underlying))
     }
   }
 
@@ -116,7 +124,7 @@ impl LxcContainer {
   /// Returns `true` when container is running, else `false`.
   pub fn is_running(&self) -> bool {
     unsafe {
-      ((*self.container).is_running)(self.container) != 0
+      ((*self.underlying).is_running)(self.underlying) != 0
     }
   }
 
@@ -126,7 +134,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn freeze(&self) -> bool {
     unsafe {
-      ((*self.container).freeze)(self.container) != 0
+      ((*self.underlying).freeze)(self.underlying) != 0
     }
   }
 
@@ -136,7 +144,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn unfreeze(&self) -> bool {
     unsafe {
-      ((*self.container).unfreeze)(self.container) != 0
+      ((*self.underlying).unfreeze)(self.underlying) != 0
     }
   }
 
@@ -146,7 +154,7 @@ impl LxcContainer {
   /// Returns pid of init process as seen from outside the container.
   pub fn init_pid(&self) -> i32 {
     unsafe {
-      ((*self.container).init_pid)(self.container)
+      ((*self.underlying).init_pid)(self.underlying)
     }
   }
 
@@ -159,7 +167,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn load_config(&self, config_path: &str) -> bool {
     unsafe {
-      ((*self.container).load_config)(self.container, str_to_ptr(config_path).as_ptr()) != 0
+      ((*self.underlying).load_config)(self.underlying, str_to_ptr(config_path).as_ptr()) != 0
     }
   }
 
@@ -182,7 +190,7 @@ impl LxcContainer {
         None    => ptr::null::<*const libc::c_char>()
       };
 
-      ((*self.container).start)(self.container, use_init, argv_ptr) != 0
+      ((*self.underlying).start)(self.underlying, use_init, argv_ptr) != 0
     }
   }
 
@@ -192,7 +200,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn stop(&self) -> bool {
     unsafe {
-      ((*self.container).stop)(self.container) != 0
+      ((*self.underlying).stop)(self.underlying) != 0
     }
   }
 
@@ -205,7 +213,7 @@ impl LxcContainer {
   /// Returns `true` if container wants to be daemonized, else `false`.
   pub fn want_daemonize(&self, state: bool) -> bool {
     unsafe {
-      ((*self.container).want_daemonize)(self.container, state as libc::c_char) != 0
+      ((*self.underlying).want_daemonize)(self.underlying, state as libc::c_char) != 0
     }
   }
 
@@ -218,7 +226,7 @@ impl LxcContainer {
   /// Returns `true` if container wants all file descriptors closed, else `false`.
   pub fn want_close_all_fds(&self, state: bool) -> bool {
     unsafe {
-      ((*self.container).want_close_all_fds)(self.container, state as libc::c_char) != 0
+      ((*self.underlying).want_close_all_fds)(self.underlying, state as libc::c_char) != 0
     }
   }
 
@@ -229,7 +237,7 @@ impl LxcContainer {
   pub fn config_file_name(&self) -> String {
     unsafe {
       // TODO returns NULL on error
-      ptr_to_str(((*self.container).config_file_name)(self.container))
+      ptr_to_str(((*self.underlying).config_file_name)(self.underlying))
     }
   }
 
@@ -244,7 +252,7 @@ impl LxcContainer {
   /// Returns `true` if state reached within timeout, else `false`.
   pub fn wait(&self, state: &str, timeout: i32) -> bool {
     unsafe {
-      ((*self.container).wait)(self.container, str_to_ptr(state).as_ptr(), timeout as libc::c_int) != 0
+      ((*self.underlying).wait)(self.underlying, str_to_ptr(state).as_ptr(), timeout as libc::c_int) != 0
     }
   }
 
@@ -259,7 +267,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn set_config_item(&self, key: &str, value: &str) -> bool {
     unsafe {
-      ((*self.container).set_config_item)(self.container, str_to_ptr(key).as_ptr(), str_to_ptr(value).as_ptr()) != 0
+      ((*self.underlying).set_config_item)(self.underlying, str_to_ptr(key).as_ptr(), str_to_ptr(value).as_ptr()) != 0
     }
   }
 
@@ -272,7 +280,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn destroy(&self) -> bool {
     unsafe {
-      ((*self.container).destroy)(self.container) != 0
+      ((*self.underlying).destroy)(self.underlying) != 0
     }
   }
 
@@ -285,7 +293,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn destroy_with_snapshots(&self) -> bool {
     unsafe {
-      ((*self.container).destroy_with_snapshots)(self.container) != 0
+      ((*self.underlying).destroy_with_snapshots)(self.underlying) != 0
     }
   }
 
@@ -298,7 +306,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn save_config(&self, alt_file: &str) -> bool {
     unsafe {
-      ((*self.container).save_config)(self.container, str_to_ptr(alt_file).as_ptr()) != 0
+      ((*self.underlying).save_config)(self.underlying, str_to_ptr(alt_file).as_ptr()) != 0
     }
   }
 
@@ -311,7 +319,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
-      ((*self.container).rename)(self.container, str_to_ptr(new_name).as_ptr()) != 0
+      ((*self.underlying).rename)(self.underlying, str_to_ptr(new_name).as_ptr()) != 0
     }
   }
 
@@ -319,13 +327,15 @@ impl LxcContainer {
                 flags: LxcCreateFlag, argv: Vec<&str>) -> bool {
     unsafe {
       let argv_ptr = match vec_to_ptr(argv) {
-        Some(x) => x.iter()
-                    .map(|s| s.as_ptr())
-                    .collect::<Vec<*const libc::c_char>>()
-                    .as_ptr(),
+        Some(x) => { let mut tmp = x.iter()
+                                    .map(|s| s.as_ptr())
+                                    .collect::<Vec<*const libc::c_char>>();
+                     tmp.push(ptr::null::<libc::c_char>());
+                     tmp.as_ptr() 
+                   },
         None    => ptr::null::<*const libc::c_char>()
       };
-      ((*self.container).create)(self.container, str_to_ptr(template).as_ptr(),
+      ((*self.underlying).create)(self.underlying, str_to_ptr(template).as_ptr(),
                                 str_to_ptr(bdevtype).as_ptr(),
                                 bdev_specs.underlying, flags as libc::c_int,
                                 argv_ptr) != 0

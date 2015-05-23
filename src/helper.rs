@@ -7,7 +7,8 @@ use std::ptr;
 
 /// Converts from `&str` to C pointer to c-string.
 pub fn str_to_ptr(s: &str) -> CString {
-  CString::new(s).unwrap()
+    // Maybe better fail handling should be used
+    CString::new(s).unwrap()
 }
 
 /// Converts from C pointer to c-string to `String`.
@@ -20,9 +21,10 @@ pub fn ptr_to_str(ptr: *const c_char) -> String {
 
 pub fn vec_to_ptr(vec: Vec<&str>) -> Option<Vec<CString>> {
   if !vec.is_empty() {
-    Some(vec.iter()
-       .map(|s| str_to_ptr(s))
-       .collect::<Vec<CString>>())
+    let mut tmp = vec.iter()
+                     .map(|s| str_to_ptr(s))
+                     .collect::<Vec<CString>>();
+    Some(tmp)
   }
   else {
     None

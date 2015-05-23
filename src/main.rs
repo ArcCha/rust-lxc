@@ -7,10 +7,10 @@ fn main() {
                                     "");
   match container {
     Ok(c) => {
+      println!("Created lxc container object.");
       let specs = BDevSpecs::new();
       let argv = vec!["-d", "ubuntu", "-r", "trusty", "-a", "amd64"];
       c.create("download", "", specs, LxcCreateFlag::Quiet, argv);
-      println!("Created lxc container object.");
       if c.is_defined() { println!("Already defined"); } else { println!("Not yet defined"); }
       // if c.rename("test2") { println!("Renamed"); } else { println!("Rename failed"); }
       println!("State: {}", c.state());
