@@ -10,7 +10,7 @@ fn main() {
       println!("Created lxc container object.");
       let specs = BDevSpecs::new();
       let argv = vec!["-d", "ubuntu", "-r", "trusty", "-a", "amd64"];
-      if c.create("download", "", specs, LxcCreateFlag::Quiet, argv) {
+      if c.create("download", "", specs, LxcCreateFlag::Verbose, argv) {
         println!("Sucess!");
       }
       else {

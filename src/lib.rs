@@ -27,6 +27,7 @@ pub fn version() -> String {
 // }
 
 pub enum LxcCreateFlag {
+  Verbose  = 0x00,
   Quiet    = 0x01,
   Maxflags = 0x02,
 }
@@ -77,21 +78,16 @@ impl LxcContainer {
   pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
     let container = LxcContainer {
       underlying: unsafe {
-        ffi::lxc_container_new(if name == "" {
-                                 ptr::null::<libc::c_char>()
-                               } else {
-                                 str_to_ptr(name).as_ptr()
-                               },
-                               if config_path == "" {
-                                 ptr::null::<libc::c_char>()
-                               } else {
-                                str_to_ptr(config_path).as_ptr()
-                               })
+        let name_cstring = str_to_cstring(name);
+        let name_ptr = if name == "" { ptr::null() } else { name_cstring.as_ptr() };
+        let config_path_cstring = str_to_cstring(config_path);
+        let config_path_ptr = if config_path == "" { ptr::null() } else { str_to_cstring(config_path).as_ptr() };
+        ffi::lxc_container_new(name_ptr, config_path_ptr)
       }
     };
 
     if container.underlying.is_null() {
-      Err("cannot create LxcContainer")
+      Err("Cannot create LxcContainer")
     }
     else {
       Ok(container)
@@ -167,7 +163,9 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn load_config(&self, config_path: &str) -> bool {
     unsafe {
-      ((*self.underlying).load_config)(self.underlying, str_to_ptr(config_path).as_ptr()) != 0
+      let config_path_cstring = str_to_cstring(config_path);
+      let config_path_ptr = if config_path == "" { ptr::null() } else { str_to_cstring(config_path).as_ptr() };
+      ((*self.underlying).load_config)(self.underlying, config_path_ptr) != 0
     }
   }
 
@@ -182,15 +180,16 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn start(&self, use_init: i32, argv: Vec<&str>) -> bool {
     unsafe {
-      let argv_ptr = match vec_to_ptr(argv) {
+      let argv_option = vec_str_to_cstring(argv);
+      let argv_ptr = match argv_option {
         Some(x) => x.iter()
                     .map(|s| s.as_ptr())
                     .collect::<Vec<*const libc::c_char>>()
                     .as_ptr(),
-        None    => ptr::null::<*const libc::c_char>()
+        None    => ptr::null()
       };
 
-      ((*self.underlying).start)(self.underlying, use_init, argv_ptr) != 0
+      ((*self.underlying).start)(self.underlying, use_init as libc::c_int, argv_ptr) != 0
     }
   }
 
@@ -236,7 +235,7 @@ impl LxcContainer {
   /// Returns config file name.
   pub fn config_file_name(&self) -> String {
     unsafe {
-      // TODO returns NULL on error
+      // TODO care: returns NULL on error
       ptr_to_str(((*self.underlying).config_file_name)(self.underlying))
     }
   }
@@ -252,7 +251,9 @@ impl LxcContainer {
   /// Returns `true` if state reached within timeout, else `false`.
   pub fn wait(&self, state: &str, timeout: i32) -> bool {
     unsafe {
-      ((*self.underlying).wait)(self.underlying, str_to_ptr(state).as_ptr(), timeout as libc::c_int) != 0
+      let state_cstring = str_to_cstring(state);
+      let state_ptr = if state == "" { ptr::null() } else { state_cstring.as_ptr() };
+      ((*self.underlying).wait)(self.underlying, state_ptr, timeout as libc::c_int) != 0
     }
   }
 
@@ -267,7 +268,11 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn set_config_item(&self, key: &str, value: &str) -> bool {
     unsafe {
-      ((*self.underlying).set_config_item)(self.underlying, str_to_ptr(key).as_ptr(), str_to_ptr(value).as_ptr()) != 0
+      let key_cstring = str_to_cstring(key);
+      let key_ptr = if key == "" { ptr::null() } else { key_cstring.as_ptr() };
+      let value_cstring = str_to_cstring(value);
+      let value_ptr = if value == "" { ptr::null() } else { value_cstring.as_ptr() };
+      ((*self.underlying).set_config_item)(self.underlying, key_ptr, value_ptr) != 0
     }
   }
 
@@ -306,7 +311,9 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn save_config(&self, alt_file: &str) -> bool {
     unsafe {
-      ((*self.underlying).save_config)(self.underlying, str_to_ptr(alt_file).as_ptr()) != 0
+      let alt_file_cstring = str_to_cstring(alt_file);
+      let alt_file_ptr = if alt_file == "" { ptr::null() } else { alt_file_cstring.as_ptr() };
+      ((*self.underlying).save_config)(self.underlying, alt_file_ptr) != 0
     }
   }
 
@@ -319,32 +326,50 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
-      ((*self.underlying).rename)(self.underlying, str_to_ptr(new_name).as_ptr()) != 0
+      let new_name_cstring = str_to_cstring(new_name);
+      let new_name_ptr = if new_name == "" { ptr::null() } else { new_name_cstring.as_ptr() };
+      ((*self.underlying).rename)(self.underlying, new_name_ptr) != 0
     }
   }
 
-  pub fn create(&self, template: &str, bdevtype: &str, bdev_specs: BDevSpecs,
-                flags: LxcCreateFlag, argv: Vec<&str>) -> bool {
+  /// Create a container.
+  ///
+  /// # Parameters
+  /// `template` - template to execute to instantiate the root filesystem and adjust the configuration.
+  ///
+  /// `bdevtype` - backing store type to use (if NULL, dir will be used).
+  ///
+  /// `specs` - additional parameters for the backing store (for example LVM volume group to use).
+  ///
+  /// `flags` - LxcCreateFlag options
+  ///
+  /// `argv` - arguments to pass to the template, if no arguments are required, pass `None`.
+  ///
+  /// # Return value
+  /// Returns `true` on success, else `false`.
+  pub fn create(&self, template: &str, 
+                       bdevtype: &str, 
+                       bdev_specs: BDevSpecs,
+                       flags: LxcCreateFlag, 
+                       argv: Vec<&str>) -> bool {
     unsafe {
-      let mut argv_tmp;
-      let argv_ptr = match vec_to_ptr(argv) {
-        Some(x) => { argv_tmp = x;
-                     let mut tmp = argv_tmp.iter()
-                                    .map(|s| s.as_ptr())
-                                    .collect::<Vec<*const libc::c_char>>();
-                     tmp.push(ptr::null::<libc::c_char>());
-                     tmp.as_ptr() 
-                   },
-        None    => ptr::null::<*const libc::c_char>()
+      let argv_option = vec_str_to_cstring(argv);
+      let argv_ptr = match argv_option {
+        Some(x) => x.iter()
+                    .map(|s| s.as_ptr())
+                    .collect::<Vec<*const libc::c_char>>()
+                    .as_ptr(),
+        None    => ptr::null()
       };
-      ((*self.underlying).create)(self.underlying, str_to_ptr(template).as_ptr(),
-                                  if bdevtype == "" {
-                                    ptr::null::<libc::c_char>()
-                                  }
-                                  else {
-                                    str_to_ptr(bdevtype).as_ptr()
-                                  },
-                                  bdev_specs.underlying, 0 as libc::c_int,
+      let template_cstring = str_to_cstring(template);
+      let template_ptr = if template == "" { ptr::null() } else { template_cstring.as_ptr() };
+      let bdevtype_cstring = str_to_cstring(bdevtype);
+      let bdevtype_ptr = if bdevtype == "" { ptr::null() } else { bdevtype_cstring.as_ptr() };
+      ((*self.underlying).create)(self.underlying, 
+                                  template_ptr,
+                                  bdevtype_ptr,
+                                  bdev_specs.underlying,
+                                  flags as libc::c_int,
                                   argv_ptr) != 0
     }
   }
@@ -357,7 +382,7 @@ pub struct BDevSpecs {
 impl BDevSpecs {
   pub fn new() -> BDevSpecs {
     BDevSpecs {
-      underlying: ptr::null_mut::<ffi::attach_options::BDevSpecs>()
+      underlying: ptr::null_mut()
     }
   }  
 }
