@@ -326,8 +326,10 @@ impl LxcContainer {
   pub fn create(&self, template: &str, bdevtype: &str, bdev_specs: BDevSpecs,
                 flags: LxcCreateFlag, argv: Vec<&str>) -> bool {
     unsafe {
+      let mut argv_tmp;
       let argv_ptr = match vec_to_ptr(argv) {
-        Some(x) => { let mut tmp = x.iter()
+        Some(x) => { argv_tmp = x;
+                     let mut tmp = argv_tmp.iter()
                                     .map(|s| s.as_ptr())
                                     .collect::<Vec<*const libc::c_char>>();
                      tmp.push(ptr::null::<libc::c_char>());
