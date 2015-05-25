@@ -65,7 +65,7 @@ impl LxcContainer {
   /// # Parameters
   /// `name` - name to use for the container.
   /// 
-  /// `config_path` - full path to optional config file. If you don't want to use any, pass empty string.
+  /// `config_path_option` - `Option` with full path to config file. If you don't want to use any, pass `None`.
   ///
   /// # Return value
   /// Returns `Ok(LxcContainer)` if the creation was sucessful, else `Err(&'static str)` with error description.
@@ -75,13 +75,19 @@ impl LxcContainer {
   /// let c = liblxc::LxcContainer::new("example", "");
   /// # assert!(c.is_ok())
   /// ```
-  pub fn new(name: &str, config_path: &str) -> Result<LxcContainer, &'static str> {
+  pub fn new(name: &str, config_path_option: Option<&str>) -> Result<LxcContainer, &'static str> {
     let container = LxcContainer {
       underlying: unsafe {
         let name_cstring = str_to_cstring(name);
-        let name_ptr = if name == "" { ptr::null() } else { name_cstring.as_ptr() };
-        let config_path_cstring = str_to_cstring(config_path);
-        let config_path_ptr = if config_path == "" { ptr::null() } else { str_to_cstring(config_path).as_ptr() };
+        let name_ptr = name_cstring.as_ptr();
+        let mut config_path_cstring;
+        let config_path_ptr = match config_path_option {
+          Some(config_path) =>  {  
+                                  config_path_cstring = str_to_cstring(config_path);
+                                  str_to_cstring(config_path).as_ptr() 
+                                }
+          None => ptr::null()
+        };
         ffi::lxc_container_new(name_ptr, config_path_ptr)
       }
     };
@@ -157,14 +163,20 @@ impl LxcContainer {
   /// Load the specified configuration for the container.
   ///
   /// # Parameters
-  /// `config_path` - full path to alternate configuration file, or empty string to use the default configuration file. 
+  /// `config_path_option` - `Option` with full path to alternate configuration file, or `None` to use the default. 
   ///
   /// # Return value
   /// Returns `true` on success, else `false`.
-  pub fn load_config(&self, config_path: &str) -> bool {
+  pub fn load_config(&self, config_path_option: Option<&str>) -> bool {
     unsafe {
-      let config_path_cstring = str_to_cstring(config_path);
-      let config_path_ptr = if config_path == "" { ptr::null() } else { str_to_cstring(config_path).as_ptr() };
+      let mut config_path_cstring;
+      let config_path_ptr = match config_path_option {
+        Some(config_path) =>  {  
+                                config_path_cstring = str_to_cstring(config_path);
+                                str_to_cstring(config_path).as_ptr() 
+                              }
+        None => ptr::null()
+      };
       ((*self.underlying).load_config)(self.underlying, config_path_ptr) != 0
     }
   }
@@ -174,21 +186,23 @@ impl LxcContainer {
   /// # Parameters
   /// `use_init` - use lxcinit rather than /sbin/init.
   ///
-  /// `argv` - vector of arguments to pass to init.
+  /// `argv_option` - `Option` with vector of arguments to pass to init. If no arguments are required, pass `None`.
   ///
   /// # Return value
   /// Returns `true` on success, else `false`.
-  pub fn start(&self, use_init: i32, argv: Vec<&str>) -> bool {
+  pub fn start(&self, use_init: i32, argv_option: Option<Vec<&str>>) -> bool {
     unsafe {
-      let argv_option = vec_str_to_cstring(argv);
+      let mut argv_cstring;
       let argv_ptr = match argv_option {
-        Some(x) => x.iter()
-                    .map(|s| s.as_ptr())
-                    .collect::<Vec<*const libc::c_char>>()
-                    .as_ptr(),
-        None    => ptr::null()
+        Some(argv) => {
+                        argv_cstring = vec_str_to_cstring(argv);
+                        argv_cstring.iter()
+                                    .map(|s| s.as_ptr())
+                                    .collect::<Vec<*const libc::c_char>>()
+                                    .as_ptr()
+                      }
+        None => ptr::null()
       };
-
       ((*self.underlying).start)(self.underlying, use_init as libc::c_int, argv_ptr) != 0
     }
   }
@@ -252,7 +266,7 @@ impl LxcContainer {
   pub fn wait(&self, state: &str, timeout: i32) -> bool {
     unsafe {
       let state_cstring = str_to_cstring(state);
-      let state_ptr = if state == "" { ptr::null() } else { state_cstring.as_ptr() };
+      let state_ptr = state_cstring.as_ptr();
       ((*self.underlying).wait)(self.underlying, state_ptr, timeout as libc::c_int) != 0
     }
   }
@@ -269,9 +283,9 @@ impl LxcContainer {
   pub fn set_config_item(&self, key: &str, value: &str) -> bool {
     unsafe {
       let key_cstring = str_to_cstring(key);
-      let key_ptr = if key == "" { ptr::null() } else { key_cstring.as_ptr() };
+      let key_ptr = key_cstring.as_ptr();
       let value_cstring = str_to_cstring(value);
-      let value_ptr = if value == "" { ptr::null() } else { value_cstring.as_ptr() };
+      let value_ptr = value_cstring.as_ptr();
       ((*self.underlying).set_config_item)(self.underlying, key_ptr, value_ptr) != 0
     }
   }
@@ -312,8 +326,59 @@ impl LxcContainer {
   pub fn save_config(&self, alt_file: &str) -> bool {
     unsafe {
       let alt_file_cstring = str_to_cstring(alt_file);
-      let alt_file_ptr = if alt_file == "" { ptr::null() } else { alt_file_cstring.as_ptr() };
+      let alt_file_ptr = alt_file_cstring.as_ptr();
       ((*self.underlying).save_config)(self.underlying, alt_file_ptr) != 0
+    }
+  }
+
+  /// Create a container.
+  ///
+  /// # Parameters
+  /// `template` - template to execute to instantiate the root filesystem and adjust the configuration.
+  ///
+  /// `bdevtype_option` - `Option` with backing store type to use. If `None`, dir will be used.
+  ///
+  /// `specs` - additional parameters for the backing store (for example LVM volume group to use).
+  ///
+  /// `flags` - `LxcCreateFlag` options
+  ///
+  /// `argv_option` - `Option` with vector of arguments to pass to the template. If no arguments are required, pass `None`.
+  ///
+  /// # Return value
+  /// Returns `true` on success, else `false`.
+  pub fn create(&self, template: &str, 
+                       bdevtype_option: Option<&str>, 
+                       bdev_specs: BDevSpecs,
+                       flags: LxcCreateFlag, 
+                       argv_option: Option<Vec<&str>>) -> bool {
+    unsafe {
+      let template_cstring = str_to_cstring(template);
+      let template_ptr = template_cstring.as_ptr();
+      let mut bdevtype_cstring;
+      let bdevtype_ptr = match bdevtype_option {
+        Some(bdevtype) => {
+                            bdevtype_cstring = str_to_cstring(bdevtype);
+                            bdevtype_cstring.as_ptr()
+                          }
+        None => ptr::null()
+      };
+      let mut argv_cstring;
+      let argv_ptr = match argv_option {
+        Some(argv) => {
+                        argv_cstring = vec_str_to_cstring(argv);
+                        argv_cstring.iter()
+                                    .map(|s| s.as_ptr())
+                                    .collect::<Vec<*const libc::c_char>>()
+                                    .as_ptr()
+                      }
+        None => ptr::null()
+      };
+      ((*self.underlying).create)(self.underlying, 
+                                  template_ptr,
+                                  bdevtype_ptr,
+                                  bdev_specs.underlying,
+                                  flags as libc::c_int,
+                                  argv_ptr) != 0
     }
   }
 
@@ -327,50 +392,8 @@ impl LxcContainer {
   pub fn rename(&self, new_name: &str) -> bool {
     unsafe {
       let new_name_cstring = str_to_cstring(new_name);
-      let new_name_ptr = if new_name == "" { ptr::null() } else { new_name_cstring.as_ptr() };
+      let new_name_ptr = new_name_cstring.as_ptr();
       ((*self.underlying).rename)(self.underlying, new_name_ptr) != 0
-    }
-  }
-
-  /// Create a container.
-  ///
-  /// # Parameters
-  /// `template` - template to execute to instantiate the root filesystem and adjust the configuration.
-  ///
-  /// `bdevtype` - backing store type to use (if NULL, dir will be used).
-  ///
-  /// `specs` - additional parameters for the backing store (for example LVM volume group to use).
-  ///
-  /// `flags` - LxcCreateFlag options
-  ///
-  /// `argv` - arguments to pass to the template, if no arguments are required, pass `None`.
-  ///
-  /// # Return value
-  /// Returns `true` on success, else `false`.
-  pub fn create(&self, template: &str, 
-                       bdevtype: &str, 
-                       bdev_specs: BDevSpecs,
-                       flags: LxcCreateFlag, 
-                       argv: Vec<&str>) -> bool {
-    unsafe {
-      let argv_option = vec_str_to_cstring(argv);
-      let argv_ptr = match argv_option {
-        Some(x) => x.iter()
-                    .map(|s| s.as_ptr())
-                    .collect::<Vec<*const libc::c_char>>()
-                    .as_ptr(),
-        None    => ptr::null()
-      };
-      let template_cstring = str_to_cstring(template);
-      let template_ptr = if template == "" { ptr::null() } else { template_cstring.as_ptr() };
-      let bdevtype_cstring = str_to_cstring(bdevtype);
-      let bdevtype_ptr = if bdevtype == "" { ptr::null() } else { bdevtype_cstring.as_ptr() };
-      ((*self.underlying).create)(self.underlying, 
-                                  template_ptr,
-                                  bdevtype_ptr,
-                                  bdev_specs.underlying,
-                                  flags as libc::c_int,
-                                  argv_ptr) != 0
     }
   }
 }

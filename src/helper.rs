@@ -19,14 +19,8 @@ pub fn ptr_to_str(ptr: *const c_char) -> String {
 }
 
 /// Converts `&str` vector to `CString` vector
-pub fn vec_str_to_cstring(vec: Vec<&str>) -> Option<Vec<CString>> {
-  if !vec.is_empty() {
-    let tmp = vec.iter()
-                 .map(|s| str_to_cstring(s))
-                 .collect::<Vec<CString>>();
-    Some(tmp)
-  }
-  else {
-    None
-  }
+pub fn vec_str_to_cstring(vec: Vec<&str>) -> Vec<CString> {
+    vec.iter()
+       .map(|s| str_to_cstring(s))
+       .collect::<Vec<CString>>()
 }
