@@ -500,6 +500,38 @@ impl LxcContainer {
       }
     }
   }
+
+  /// Retrieve a list of config item keys given a key prefix.
+  ///
+  /// # Parameters
+  /// `key_prefix` - name prefix of keys to get.
+  ///
+  /// # Return value
+  /// Returns `Ok` with a vector of config item keys or `Err` in case of error.
+  pub fn get_keys(&self, key_prefix: &str) -> Result<Vec<String>, &'static str> {
+    unsafe {
+      let key_prefix_cstring = str_to_cstring(key_prefix);
+      let key_prefix_ptr = key_prefix_cstring.as_ptr();
+      let retv_len = ((*self.underlying).get_keys)(self.underlying, key_prefix_ptr, ptr::null_mut(), 0);
+      if retv_len == -1 {
+        Err("Couldn't get list of config item keys")
+      }
+      else {
+        let mut retv = Vec::with_capacity(retv_len as usize);
+        for i in 0..retv_len {
+          retv.push(' ' as libc::c_char);
+        }
+        ((*self.underlying).get_keys)(self.underlying, key_prefix_ptr, retv.as_mut_ptr(), retv_len);
+        retv.pop(); // pop null placed at the end
+        let keys_newline_separated = String::from_utf8(retv.iter()
+                                                           .map(|c| *c as u8)
+                                                           .collect::<Vec<u8>>())
+                                                           .ok().expect("Invalid UTF8 string");
+        let keys_list : Vec<String> = keys_newline_separated.split('\n').map(|key| key.to_string()).collect();
+        Ok(keys_list)
+      }
+    }
+  }
 }
 
 pub struct BDevSpecs {

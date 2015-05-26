@@ -32,6 +32,9 @@ fn main() {
       let running_key = "lxc.utsname";
       println!("Get running config item (Ok): {} = {:?}", running_key, c.get_running_config_item(running_key));
       println!("Get running config item (Err): {} = {:?}", "err", c.get_running_config_item("err"));
+      let key_prefix = "lxc.network.0";
+      println!("Get keys list (Ok): {} = {:?}", key_prefix, c.get_keys(key_prefix));
+      println!("Get keys list (Err): {} = {:?}", "err", c.get_keys("err"));
 
       println!("Freeze: {}", c.freeze());
       println!("State: {}", c.state());
