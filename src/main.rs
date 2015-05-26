@@ -27,9 +27,11 @@ fn main() {
       let key = "lxc.hook.pre-start";
       let value = "hi there";
       println!("set: {}", c.set_config_item(key, value));
-      println!("Get config item: {} = {:?}", key, c.get_config_item(key));
+      println!("Get config item (Ok): {} = {:?}", key, c.get_config_item(key));
+      println!("Get config item (Err): {} = {:?}", "err", c.get_config_item("err"));
       let running_key = "lxc.utsname";
-      println!("Get running config item: {} = {:?}", running_key, c.get_running_config_item(running_key));
+      println!("Get running config item (Ok): {} = {:?}", running_key, c.get_running_config_item(running_key));
+      println!("Get running config item (Err): {} = {:?}", "err", c.get_running_config_item("err"));
 
       println!("Freeze: {}", c.freeze());
       println!("State: {}", c.state());

@@ -246,11 +246,16 @@ impl LxcContainer {
   /// Return current config file name.
   ///
   /// # Return value
-  /// Returns config file name.
-  pub fn config_file_name(&self) -> String {
+  /// Returns `Ok` with config file name or `Err` in case of error.
+  pub fn config_file_name(&self) -> Result<String, &'static str> {
     unsafe {
-      // TODO care: returns NULL on error
-      ptr_to_str(((*self.underlying).config_file_name)(self.underlying))
+      let config_name_ptr = ((*self.underlying).config_file_name)(self.underlying);
+      if config_name_ptr == ptr::null_mut() {
+        Err("Couldn't get config file name")
+      }
+      else {
+        Ok(ptr_to_str(config_name_ptr))
+      }
     }
   }
 
@@ -319,15 +324,15 @@ impl LxcContainer {
   /// Save configuaration to a file.
   ///
   /// # Parameters
-  /// `alt_file` - full path to file to save configuration in.
+  /// `config_save_path` - full path to file to save configuration in.
   ///
   /// # Return value
   /// Returns `true` on success, else `false`.
-  pub fn save_config(&self, alt_file: &str) -> bool {
+  pub fn save_config(&self, config_save_path: &str) -> bool {
     unsafe {
-      let alt_file_cstring = str_to_cstring(alt_file);
-      let alt_file_ptr = alt_file_cstring.as_ptr();
-      ((*self.underlying).save_config)(self.underlying, alt_file_ptr) != 0
+      let config_save_path_cstring = str_to_cstring(config_save_path);
+      let config_save_path_ptr = config_save_path_cstring.as_ptr();
+      ((*self.underlying).save_config)(self.underlying, config_save_path_ptr) != 0
     }
   }
 
@@ -451,14 +456,14 @@ impl LxcContainer {
   /// `key` - name of option to get.
   ///
   /// # Return value
-  /// Returns `Some' with value of a config item or `None` in case of error.
-  pub fn get_config_item(&self, key: &str) -> Option<String> {
+  /// Returns `Ok` with the value of a config item or `Err` in case of error.
+  pub fn get_config_item(&self, key: &str) -> Result<String, &'static str> {
     unsafe {
       let key_cstring = str_to_cstring(key);
       let key_ptr = key_cstring.as_ptr();
       let retv_len = ((*self.underlying).get_config_item)(self.underlying, key_ptr, ptr::null_mut(), 0);
       if retv_len == -1 {
-        None
+        Err("Couldn't get config item value")
       }
       else {
         let mut retv = Vec::with_capacity(retv_len as usize);
@@ -467,7 +472,7 @@ impl LxcContainer {
         }
         ((*self.underlying).get_config_item)(self.underlying, key_ptr, retv.as_mut_ptr(), retv_len);
         retv.pop(); // pop null placed at the end
-        Some(String::from_utf8(retv.iter()
+        Ok(String::from_utf8(retv.iter()
                               .map(|c| *c as u8)
                               .collect::<Vec<u8>>())
                               .ok().expect("Invalid UTF8 string"))
@@ -481,17 +486,17 @@ impl LxcContainer {
   /// `key` - name of option to get.
   ///
   /// # Return value
-  ///  Returns `Some' with value of a config item or `None` in case of error.
-  pub fn get_running_config_item(&self, key: &str) -> Option<String> {
+  /// Returns `Ok` with the value of a config item or `Err` in case of error.
+  pub fn get_running_config_item(&self, key: &str) -> Result<String, &'static str> {
     unsafe {
       let key_cstring = str_to_cstring(key);
       let key_ptr = key_cstring.as_ptr();
       let config_item_ptr = ((*self.underlying).get_running_config_item)(self.underlying, key_ptr);
       if config_item_ptr == ptr::null_mut() {
-        None
+        Err("Couldn't get running config item value")
       }
       else {
-        Some(ptr_to_str(config_item_ptr))
+        Ok(ptr_to_str(config_item_ptr))
       }
     }
   }
