@@ -536,12 +536,16 @@ impl LxcContainer {
   /// Obtain a list of network interfaces.
   ///
   /// # Return value
-  /// Returns `Ok` with a vector of network interfaces names or `Err` in case of error.
-  pub fn get_interfaces(&self) -> Result<Vec<String>, &'static str> {
+  /// Returns a vector of network interfaces.
+  ///
+  /// ## Note
+  /// Due to limitation of the original C implementation this method returns empty vector 
+  /// either when error occurred or no IP addresses are present. 
+  pub fn get_interfaces(&self) -> Vec<String> {
     unsafe {
       let interfaces_ptr = ((*self.underlying).get_interfaces)(self.underlying);
       if interfaces_ptr == ptr::null_mut() {
-        Err("Couldn't get list of network interfaces")
+        Vec::new()
       }
       else {
         let mut interfaces_list = Vec::new();
@@ -556,7 +560,7 @@ impl LxcContainer {
           }
           i += 1;
         }
-        Ok(interfaces_list)
+        interfaces_list
       }
     }
   }
@@ -576,7 +580,7 @@ impl LxcContainer {
   /// Returns a vector of container IP addresses.
   ///
   /// ## Note
-  /// Because of limitation of the original C implementation this method returns empty vector 
+  /// Due to limitation of the original C implementation this method returns empty vector 
   /// either when error occurred or no IP addresses are present. 
   pub fn get_ips(&self, interface_option: Option<&str>, 
                         family_option: Option<&str>, 
@@ -617,6 +621,94 @@ impl LxcContainer {
         }
         ips_list
       }
+    }
+  }
+
+  /// Retrieve the specified cgroup subsystem value for the container.
+  ///
+  /// # Parameters
+  /// `subsys` - cgroup subsystem to retrieve.
+  ///
+  /// # Return value
+  /// Returns `Ok` with `subsys` value or `Err` in case of error.
+  pub fn get_cgroup_item(&self, subsys: &str) -> Result<String, &'static str> {
+    unsafe {
+      let subsys_cstring = str_to_cstring(subsys);
+      let subsys_ptr = subsys_cstring.as_ptr();
+      let retv_len = ((*self.underlying).get_cgroup_item)(self.underlying, subsys_ptr, ptr::null_mut(), 0);
+      if retv_len == -1 {
+        Err("Couldn't get specified cgroup subsystem value")
+      }
+      else {
+        let mut retv = Vec::with_capacity(retv_len as usize);
+        for i in 0..retv_len {
+          retv.push(' ' as libc::c_char);
+        }
+        ((*self.underlying).get_cgroup_item)(self.underlying, subsys_ptr, retv.as_mut_ptr(), retv_len);
+        retv.pop(); // pop null placed at the end
+        let subsys_value = String::from_utf8(retv.iter()
+                                                 .map(|c| *c as u8)
+                                                 .collect::<Vec<u8>>())
+                                                 .ok().expect("Invalid UTF8 string");
+        Ok(subsys_value)
+      }
+    }
+  }
+
+  /// Set the specified cgroup subsystem value for the container.
+  ///
+  /// # Parameters
+  /// `subsys` - cgroup subsystem to consider.
+  ///
+  /// `value` - value to set for subsys.
+  ///
+  /// # Return value
+  /// Returns `true` on success, else `false`.
+  pub fn set_cgroup_item(&self, subsys: &str, value: &str) -> bool {
+    unsafe {
+      let subsys_cstring = str_to_cstring(subsys);
+      let subsys_ptr = subsys_cstring.as_ptr();
+      let value_cstring = str_to_cstring(value);
+      let value_ptr = value_cstring.as_ptr();
+      ((*self.underlying).set_cgroup_item)(self.underlying, subsys_ptr, value_ptr) != 0
+    }
+  }
+
+  /// Determine full path to the containers configuration file.
+  ///  
+  /// ## Note
+  /// Each container can have a custom configuration path. However by default it will be set to 
+  /// either the LXCPATH configure variable, or the lxcpath value in the LXC_GLOBAL_CONF configuration file 
+  /// (i.e. /etc/lxc/lxc.conf). The value for a specific container can be changed using set_config_path(). 
+  /// There is no other way to specify this in general at the moment.
+  /// 
+  /// # Returns
+  /// Returns full path to configuration file.
+  pub fn get_config_path(&self) -> String {
+    unsafe {
+      let config_path_ptr = ((*self.underlying).get_config_path)(self.underlying);
+      ptr_to_str(config_path_ptr)
+    }
+  }
+
+  /// Set the full path to the containers configuration file.
+  /// 
+  /// # Parameters
+  /// `config_path_option` - `Option` with full path to config file. If you don't want to use any, pass `None`.
+  /// 
+  /// # Returns
+  /// Returns `true` on success, else `false`.
+  pub fn set_config_path(&self, config_path_option: Option<&str>) -> bool {
+    unsafe {
+      let mut config_path_cstring;
+      let config_path_ptr = match config_path_option {
+        Some(config_path) =>  {  
+                                config_path_cstring = str_to_cstring(config_path);
+                                str_to_cstring(config_path).as_ptr() 
+                              }
+        None => ptr::null()
+      };
+      ((*self.underlying).set_config_path)(self.underlying, config_path_ptr) != 0
     }
   }
 }
