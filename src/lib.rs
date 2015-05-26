@@ -396,6 +396,99 @@ impl LxcContainer {
       ((*self.underlying).rename)(self.underlying, new_name_ptr) != 0
     }
   }
+
+  /// Request the container reboot by sending it SIGINT.
+  ///
+  /// # Return value
+  /// Returns `true` if reboot request successful, else `false`.
+  pub fn reboot(&self) -> bool {
+    unsafe {
+      ((*self.underlying).reboot)(self.underlying) != 0
+    }
+  }
+
+  /// Request the container shutdown by sending it SIGPWR.
+  ///
+  /// # Parameters
+  /// `timeout` - seconds to wait before returning `false`: -1 to wait forever, 0 to avoid waiting.
+  ///
+  /// # Return value
+  /// Returns `true` if the container was shutdown successfully, else `false`.
+  pub fn shutdown(&self, timeout: i32) -> bool {
+    unsafe {
+      ((*self.underlying).shutdown)(self.underlying, timeout as libc::c_int) != 0
+    }
+  }
+
+  /// Completely clear the containers in-memory configuration.
+  pub fn clear_config(&self) {
+    unsafe {
+      ((*self.underlying).clear_config)(self.underlying)
+    }
+  }
+
+  /// Clear a configuration item.
+  ///
+  /// # Parameters
+  /// `key` - name of option to clear.
+  ///
+  /// # Return value
+  /// Returns `true` on success, else `false`.
+  ///
+  /// ## Note
+  /// Analog of `set_config_item()`.
+  pub fn clear_config_item(&self, key: &str) -> bool {
+    unsafe {
+      let key_cstring = str_to_cstring(key);
+      let key_ptr = key_cstring.as_ptr();
+      ((*self.underlying).clear_config_item)(self.underlying, key_ptr) != 0
+    }
+  }
+
+  /// Retrieve the value of a config item.
+  ///
+  /// # Parameters
+  /// `key` - name of option to get.
+  ///
+  /// # Return value
+  /// Returns `Some' with value of a config item or `None` in case of error or `key` not set.
+  pub fn get_config_item(&self, key: &str) -> Option<String> {
+    unsafe {
+      let key_cstring = str_to_cstring(key);
+      let key_ptr = key_cstring.as_ptr();
+      let retv_len = ((*self.underlying).get_config_item)(self.underlying, key_ptr, ptr::null_mut(), 0);
+      if retv_len == -1 {
+        None
+      }
+      else {
+        let mut retv = Vec::with_capacity(retv_len as usize);
+        for i in 0..retv_len {
+          retv.push(' ' as libc::c_char);
+        }
+        ((*self.underlying).get_config_item)(self.underlying, key_ptr, retv.as_mut_ptr(), retv_len);
+        retv.pop(); // pop null placed at the end
+        Some(String::from_utf8(retv.iter()
+                              .map(|c| *c as u8)
+                              .collect::<Vec<u8>>())
+                              .ok().expect("Invalid UTF8 string"))
+      }
+    }
+  }
+
+  /// Retrieve the value of a config item from running container.
+  ///
+  /// # Parameters
+  /// `key` - name of option to get.
+  ///
+  /// # Return value
+  /// Returns `String` value of a config item.
+  pub fn get_running_config_item(&self, key: &str) -> String {
+    unsafe {
+      let key_cstring = str_to_cstring(key);
+      let key_ptr = key_cstring.as_ptr();
+      ptr_to_str(((*self.underlying).get_running_config_item)(self.underlying, key_ptr))
+    }
+  }
 }
 
 pub struct BDevSpecs {
