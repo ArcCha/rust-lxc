@@ -451,7 +451,7 @@ impl LxcContainer {
   /// `key` - name of option to get.
   ///
   /// # Return value
-  /// Returns `Some' with value of a config item or `None` in case of error or `key` not set.
+  /// Returns `Some' with value of a config item or `None` in case of error.
   pub fn get_config_item(&self, key: &str) -> Option<String> {
     unsafe {
       let key_cstring = str_to_cstring(key);
@@ -481,12 +481,18 @@ impl LxcContainer {
   /// `key` - name of option to get.
   ///
   /// # Return value
-  /// Returns `String` value of a config item.
-  pub fn get_running_config_item(&self, key: &str) -> String {
+  ///  Returns `Some' with value of a config item or `None` in case of error.
+  pub fn get_running_config_item(&self, key: &str) -> Option<String> {
     unsafe {
       let key_cstring = str_to_cstring(key);
       let key_ptr = key_cstring.as_ptr();
-      ptr_to_str(((*self.underlying).get_running_config_item)(self.underlying, key_ptr))
+      let config_item_ptr = ((*self.underlying).get_running_config_item)(self.underlying, key_ptr);
+      if config_item_ptr == ptr::null_mut() {
+        None
+      }
+      else {
+        Some(ptr_to_str(config_item_ptr))
+      }
     }
   }
 }
