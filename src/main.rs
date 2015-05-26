@@ -36,6 +36,9 @@ fn main() {
       println!("Get keys list (Ok): {} = {:?}", key_prefix, c.get_keys(key_prefix));
       println!("Get keys list (Err): {} = {:?}", "err", c.get_keys("err"));
 
+      println!("Get interfaces: {:?}", c.get_interfaces());
+      println!("Get IP addresses: {:?}", c.get_ips(None, None, 0));
+
       println!("Freeze: {}", c.freeze());
       println!("State: {}", c.state());
       println!("Unfreeze: {}", c.unfreeze());

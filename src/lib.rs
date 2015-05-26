@@ -532,6 +532,93 @@ impl LxcContainer {
       }
     }
   }
+
+  /// Obtain a list of network interfaces.
+  ///
+  /// # Return value
+  /// Returns `Ok` with a vector of network interfaces names or `Err` in case of error.
+  pub fn get_interfaces(&self) -> Result<Vec<String>, &'static str> {
+    unsafe {
+      let interfaces_ptr = ((*self.underlying).get_interfaces)(self.underlying);
+      if interfaces_ptr == ptr::null_mut() {
+        Err("Couldn't get list of network interfaces")
+      }
+      else {
+        let mut interfaces_list = Vec::new();
+        let mut i = 0;
+        loop {
+          let interface_name_ptr = *interfaces_ptr.offset(i);
+          if interface_name_ptr == ptr::null_mut() {
+            break;
+          }
+          else {
+            interfaces_list.push(ptr_to_str(interface_name_ptr));
+          }
+          i += 1;
+        }
+        Ok(interfaces_list)
+      }
+    }
+  }
+
+  /// Determine the list of container IP addresses.
+  ///
+  /// # Parameters
+  /// `interface_option` - option with network interface name to consider. 
+  ///                      Pass `None` if you want to get IPs from all interfaces
+  /// 
+  /// `family_option` - option network family, for example "inet", "inet6". 
+  ///                   Pass `None` if you want to get IPs from all families
+  ///
+  /// `scope` - IPv6 scope id (ignored if family is not "inet6").
+  ///
+  /// # Return value
+  /// Returns a vector of container IP addresses.
+  ///
+  /// ## Note
+  /// Because of limitation of the original C implementation this method returns empty vector 
+  /// either when error occurred or no IP addresses are present. 
+  pub fn get_ips(&self, interface_option: Option<&str>, 
+                        family_option: Option<&str>, 
+                        scope: i32) -> Vec<String> {
+    unsafe {
+      let mut interface_cstring;
+      let interface_ptr = match interface_option {
+        Some(interface) =>  {
+                              interface_cstring = str_to_cstring(interface);
+                              interface_cstring.as_ptr()
+                            },
+        None => ptr::null()
+      };
+      let mut family_cstring;
+      let family_ptr = match family_option {
+        Some(family) => {
+                          family_cstring = str_to_cstring(family);
+                          family_cstring.as_ptr()
+                        },
+        None => ptr::null()
+      };
+      let ips_ptr = ((*self.underlying).get_ips)(self.underlying, interface_ptr, family_ptr, scope);
+      if ips_ptr == ptr::null_mut() {
+        Vec::new()
+      }
+      else {
+        let mut ips_list = Vec::new();
+        let mut i = 0;
+        loop {
+          let ip_address_ptr = *ips_ptr.offset(i);
+          if ip_address_ptr == ptr::null_mut() {
+            break;
+          }
+          else {
+            ips_list.push(ptr_to_str(ip_address_ptr));
+          }
+          i += 1;
+        }
+        ips_list
+      }
+    }
+  }
 }
 
 pub struct BDevSpecs {
