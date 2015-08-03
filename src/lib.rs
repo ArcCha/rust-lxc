@@ -27,17 +27,26 @@ pub fn version() -> String {
 // }
 
 pub enum LxcCreateFlag {
+  /// Leave stdin, stdout and stderr as is
   Verbose  = 0x00,
+  /// Redirect stdin to /dev/zero and stdout and stderr to /dev/null
   Quiet    = 0x01,
+  /// Number of LXC_CREATE* flags
   Maxflags = 0x02,
 }
 
 pub enum LxcCloneFlag {
+  /// Do not edit the rootfs to change the hostname
   Keepname      = 0x01,
+  /// Do not change the MAC address on network interfaces
   Keepmacaddr   = 0x02,
+  /// Snapshot the original filesystem(s)
   Snapshot      = 0x04,
+  /// Use the same bdev type
   Keepbdevtype  = 0x08,
+  /// Snapshot only if bdev supports it, else copy
   MaybeSnapshot = 0x10,
+  /// Number of LXC_CLONE_* flags
   Maxflags      = 0x20,
 }
 
