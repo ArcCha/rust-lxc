@@ -48,6 +48,7 @@ pub struct LxcSnapshot {
 #[repr(C)]
 pub struct LxcConf;
 
+/// For documentation see: https://github.com/lxc/lxc/blob/master/src/lxc/lxccontainer.h
 #[repr(C)]
 pub struct LxcContainer {
   name: *mut c_char,

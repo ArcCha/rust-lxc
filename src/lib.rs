@@ -18,20 +18,12 @@ pub fn version() -> String {
   }
 }
 
-// impl ffi::LxcSnapshot {
-//   fn free(&mut self) {
-//     unsafe {
-//       (self.free)(self)
-//     }
-//   }
-// }
-
 pub enum LxcCreateFlag {
   /// Leave stdin, stdout and stderr as is
   Verbose  = 0x00,
   /// Redirect stdin to /dev/zero and stdout and stderr to /dev/null
   Quiet    = 0x01,
-  /// Number of LXC_CREATE* flags
+  /// Number of LXC_CREATE_* flags
   Maxflags = 0x02,
 }
 
@@ -722,6 +714,7 @@ impl LxcContainer {
   }
 }
 
+/// Specifications for how to create a new backing store.
 pub struct BDevSpecs {
     underlying: *mut ffi::attach_options::BDevSpecs
 }
