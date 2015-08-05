@@ -14,3 +14,6 @@ echo 'lxc.id_map = g 0 100000 65536' | tee --append /home/vagrant/.config/lxc/de
 chown -R vagrant:vagrant /home/vagrant/.config/
 mkdir -p "/home/vagrant/.local/share/lxc/"
 chown -R vagrant:vagrant "/home/vagrant/.local/share/lxc/"
+
+# Automatically go to /vagrant
+echo "cd /vagrant" >> /home/vagrant/.bashrc
