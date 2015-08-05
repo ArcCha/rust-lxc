@@ -80,11 +80,11 @@ impl LxcContainer {
     let underlying = unsafe {
       let name_cstring = str_to_cstring(name);
       let name_ptr = name_cstring.as_ptr();
-      let mut config_path_cstring;
+      let config_path_cstring;
       let config_path_ptr = match config_path_option {
         Some(config_path) =>  {  
                                 config_path_cstring = str_to_cstring(config_path);
-                                str_to_cstring(config_path).as_ptr() 
+                                config_path_cstring.as_ptr() 
                               }
         None => ptr::null()
       };
@@ -172,11 +172,11 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn load_config(&self, config_path_option: Option<&str>) -> bool {
     unsafe {
-      let mut config_path_cstring;
+      let config_path_cstring;
       let config_path_ptr = match config_path_option {
         Some(config_path) =>  {  
                                 config_path_cstring = str_to_cstring(config_path);
-                                str_to_cstring(config_path).as_ptr() 
+                                config_path_cstring.as_ptr() 
                               }
         None => ptr::null()
       };
@@ -195,7 +195,7 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn start(&self, use_init: i32, argv_option: Option<Vec<&str>>) -> bool {
     unsafe {
-      let mut argv_cstring;
+      let argv_cstring;
       let argv_ptr = match argv_option {
         Some(argv) => {
                         argv_cstring = vec_str_to_cstring(argv);
@@ -362,7 +362,7 @@ impl LxcContainer {
     unsafe {
       let template_cstring = str_to_cstring(template);
       let template_ptr = template_cstring.as_ptr();
-      let mut bdevtype_cstring;
+      let bdevtype_cstring;
       let bdevtype_ptr = match bdevtype_option {
         Some(bdevtype) => {
                             bdevtype_cstring = str_to_cstring(bdevtype);
@@ -370,7 +370,7 @@ impl LxcContainer {
                           }
         None => ptr::null()
       };
-      let mut argv_cstring;
+      let argv_cstring;
       let argv_ptr = match argv_option {
         Some(argv) => {
                         argv_cstring = vec_str_to_cstring(argv);
@@ -470,7 +470,7 @@ impl LxcContainer {
       }
       else {
         let mut retv = Vec::with_capacity(retv_len as usize);
-        for i in 0..retv_len {
+        for _ in 0..retv_len {
           retv.push(' ' as libc::c_char);
         }
         ((*self.underlying).get_config_item)(self.underlying, key_ptr, retv.as_mut_ptr(), retv_len);
@@ -521,7 +521,7 @@ impl LxcContainer {
       }
       else {
         let mut retv = Vec::with_capacity(retv_len as usize);
-        for i in 0..retv_len {
+        for _ in 0..retv_len {
           retv.push(' ' as libc::c_char);
         }
         ((*self.underlying).get_keys)(self.underlying, key_prefix_ptr, retv.as_mut_ptr(), retv_len);
@@ -589,7 +589,7 @@ impl LxcContainer {
                         family_option: Option<&str>, 
                         scope: i32) -> Vec<String> {
     unsafe {
-      let mut interface_cstring;
+      let interface_cstring;
       let interface_ptr = match interface_option {
         Some(interface) =>  {
                               interface_cstring = str_to_cstring(interface);
@@ -597,7 +597,7 @@ impl LxcContainer {
                             },
         None => ptr::null()
       };
-      let mut family_cstring;
+      let family_cstring;
       let family_ptr = match family_option {
         Some(family) => {
                           family_cstring = str_to_cstring(family);
@@ -644,7 +644,7 @@ impl LxcContainer {
       }
       else {
         let mut retv = Vec::with_capacity(retv_len as usize);
-        for i in 0..retv_len {
+        for _ in 0..retv_len {
           retv.push(' ' as libc::c_char);
         }
         ((*self.underlying).get_cgroup_item)(self.underlying, subsys_ptr, retv.as_mut_ptr(), retv_len);
@@ -703,11 +703,11 @@ impl LxcContainer {
   /// Returns `true` on success, else `false`.
   pub fn set_config_path(&self, config_path_option: Option<&str>) -> bool {
     unsafe {
-      let mut config_path_cstring;
+      let config_path_cstring;
       let config_path_ptr = match config_path_option {
         Some(config_path) =>  {  
                                 config_path_cstring = str_to_cstring(config_path);
-                                str_to_cstring(config_path).as_ptr() 
+                                config_path_cstring.as_ptr() 
                               }
         None => ptr::null()
       };
