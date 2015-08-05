@@ -712,6 +712,90 @@ impl LxcContainer {
       ((*self.underlying).set_config_path)(self.underlying, config_path_ptr) != 0
     }
   }
+
+  
+  /// Copy a stopped container.
+  ///
+  /// # Parameters
+  /// `newname` - `Option` with new name for the container. Pass None if you
+  ///  want the same name to be used. Then, a new lxcpath MUST be specified.
+  ///
+  /// `lxcpath` - `Option` with lxcpath in which to create the new container.
+  /// Pass None if you want the original container's lxcpath to be used.
+  ///
+  /// `flags` - additional `LXC_CLONE_*` flags to change the cloning behaviour:
+  ///
+  ///  - [`Keepname`](enum.LxcCloneFlag.html)
+  ///  - [`Keepmacaddr`](enum.LxcCloneFlag.html)
+  ///  - [`Snapshot`](enum.LxcCloneFlag.html)
+  ///
+  /// `bdevtype` - optionally force the cloned bdevtype to a specified plugin.
+  ///  By default (pass None) the original is used (subject to snapshot
+  ///  requirements). //TODO not sure about None//
+  ///
+  /// `bdevdata` - information about how to create the new storage
+  ///  (i.e. fstype and fsdata).
+  ///
+  /// `newsize` - in case of a block device backing store, an
+  ///  optional size. If `0`, the original backing store's size will
+  ///  be used if possible. Note this only applies to the rootfs. For
+  ///  any other filesystems, the original size will be duplicated.
+  ///
+  /// `hookargs` - additional arguments to pass to the clone hook script.
+  ///
+  /// # Returns
+  ///
+  /// Newly-allocated copy of container, or `Err` on error.
+  ///
+  /// # Note
+  ///
+  /// If `devtype` was not specified, and `flags` contains
+  /// [`Snapshot`](enum.LxcCloneFlag.html) then use the native `bdevtype`
+  /// if possible, else use an overlayfs.
+  ///
+  pub fn copy(&self, newname: Option<&str>, lxcpath: Option<&str>,
+              flags: LxcCloneFlag, bdevtype: Option<&str>,
+              bdevdata: Option<&str>, newsize: u64) -> LxcContainer {
+    unsafe {
+      let newname_cstring;
+      let newname_ptr = match newname {
+        Some(name) => {
+                        newname_cstring = str_to_cstring(name);
+                        newname_cstring.as_ptr()
+                      }
+        None => ptr::null()
+      };
+      let lxcpath_cstring;
+      let lxcpath_ptr = match lxcpath {
+        Some(path) => {
+                        lxcpath_cstring = str_to_cstring(path);
+                        lxcpath_cstring.as_ptr()
+                      }
+        None => ptr::null()
+      };
+      let bdevtype_cstring;
+      let bdevtype_ptr = match bdevtype {
+        Some(bdev) => {
+                        bdevtype_cstring = str_to_cstring(bdev);
+                        bdevtype_cstring.as_ptr()
+                      }
+        None => ptr::null()
+      };
+      let bdevdata_cstring;
+      let bdevdata_ptr = match bdevdata {
+        Some(data) => {
+                        bdevdata_cstring = str_to_cstring(data);
+                        bdevdata_cstring.as_ptr()
+                      }
+        None => ptr::null()
+      };
+      let cloned = ((*self.underlying).clone)(self.underlying, newname_ptr,
+                                              lxcpath_ptr, flags as i32,
+                                              bdevtype_ptr, bdevdata_ptr,
+                                              newsize, ptr::null_mut());
+      LxcContainer { underlying: cloned }
+    }
+  }
 }
 
 /// Specifications for how to create a new backing store.
