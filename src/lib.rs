@@ -77,27 +77,29 @@ impl LxcContainer {
   /// # assert!(c.is_ok())
   /// ```
   pub fn new(name: &str, config_path_option: Option<&str>) -> Result<LxcContainer, &'static str> {
-    let container = LxcContainer {
-      underlying: unsafe {
-        let name_cstring = str_to_cstring(name);
-        let name_ptr = name_cstring.as_ptr();
-        let mut config_path_cstring;
-        let config_path_ptr = match config_path_option {
-          Some(config_path) =>  {  
-                                  config_path_cstring = str_to_cstring(config_path);
-                                  str_to_cstring(config_path).as_ptr() 
-                                }
-          None => ptr::null()
-        };
-        ffi::lxc_container_new(name_ptr, config_path_ptr)
-      }
+    let underlying = unsafe {
+      let name_cstring = str_to_cstring(name);
+      let name_ptr = name_cstring.as_ptr();
+      let mut config_path_cstring;
+      let config_path_ptr = match config_path_option {
+        Some(config_path) =>  {  
+                                config_path_cstring = str_to_cstring(config_path);
+                                str_to_cstring(config_path).as_ptr() 
+                              }
+        None => ptr::null()
+      };
+      ffi::lxc_container_new(name_ptr, config_path_ptr)
     };
+    LxcContainer::parse_creation_result(underlying)
+  }
 
-    if container.underlying.is_null() {
+  fn parse_creation_result(underlying: *mut ffi::LxcContainer)
+                                        -> Result<LxcContainer, &'static str> {
+    if underlying.is_null() {
       Err("Cannot create LxcContainer")
     }
     else {
-      Ok(container)
+      Ok(LxcContainer { underlying: underlying })
     }
   }
 
@@ -755,7 +757,8 @@ impl LxcContainer {
   ///
   pub fn copy(&self, newname: Option<&str>, lxcpath: Option<&str>,
               flags: LxcCloneFlag, bdevtype: Option<&str>,
-              bdevdata: Option<&str>, newsize: u64) -> LxcContainer {
+              bdevdata: Option<&str>,
+              newsize: u64) -> Result<LxcContainer, &'static str> {
     unsafe {
       let newname_cstring;
       let newname_ptr = match newname {
@@ -793,7 +796,7 @@ impl LxcContainer {
                                               lxcpath_ptr, flags as i32,
                                               bdevtype_ptr, bdevdata_ptr,
                                               newsize, ptr::null_mut());
-      LxcContainer { underlying: cloned }
+      LxcContainer::parse_creation_result(cloned)
     }
   }
 }
