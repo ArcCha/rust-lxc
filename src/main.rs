@@ -45,6 +45,15 @@ fn main() {
       println!("State: {}", c.state());
       println!("Stop: {}", c.stop());
       println!("State: {}", c.state());
+
+      println!("#############################");
+      match c.clone(Some("test1"), None, LxcCloneFlag::Void, None, None, 0, None) {
+        Ok(c1) => {
+          println!("State: {}", c1.state());
+          println!("")
+        },
+        Err(e) => println!("{}", e)
+      }
     },
     Err(e) => println!("{}", e)
   }

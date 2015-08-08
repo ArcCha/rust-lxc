@@ -28,6 +28,8 @@ pub enum LxcCreateFlag {
 }
 
 pub enum LxcCloneFlag {
+  /// Do not change the cloning behaviour
+  Void          = 0x00,
   /// Do not edit the rootfs to change the hostname
   Keepname      = 0x01,
   /// Do not change the MAC address on network interfaces
@@ -755,7 +757,7 @@ impl LxcContainer {
   /// [`Snapshot`](enum.LxcCloneFlag.html) then use the native `bdevtype`
   /// if possible, else use an overlayfs.
   ///
-  pub fn copy(&self,
+  pub fn clone(&self,
               newname: Option<&str>,
               lxcpath: Option<&str>,
               flags: LxcCloneFlag,
