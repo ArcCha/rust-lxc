@@ -755,10 +755,15 @@ impl LxcContainer {
   /// [`Snapshot`](enum.LxcCloneFlag.html) then use the native `bdevtype`
   /// if possible, else use an overlayfs.
   ///
-  pub fn copy(&self, newname: Option<&str>, lxcpath: Option<&str>,
-              flags: LxcCloneFlag, bdevtype: Option<&str>,
+  pub fn copy(&self,
+              newname: Option<&str>,
+              lxcpath: Option<&str>,
+              flags: LxcCloneFlag,
+              bdevtype: Option<&str>,
               bdevdata: Option<&str>,
-              newsize: u64) -> Result<LxcContainer, &'static str> {
+              newsize: u64,
+              argv_option: Option<Vec<&str>>)
+                                        -> Result<LxcContainer, &'static str> {
     unsafe {
       let newname_cstring;
       let newname_ptr = match newname {
@@ -792,10 +797,21 @@ impl LxcContainer {
                       }
         None => ptr::null()
       };
+      let argv_cstring;
+      let argv_ptr = match argv_option {
+        Some(argv) => {
+                        argv_cstring = vec_str_to_cstring(argv);
+                        argv_cstring.iter()
+                                    .map(|s| s.as_ptr() as *mut libc::c_char)
+                                    .collect::<Vec<*mut libc::c_char>>()
+                                    .as_mut_ptr()
+                      }
+        None => ptr::null_mut()
+      };
       let cloned = ((*self.underlying).clone)(self.underlying, newname_ptr,
                                               lxcpath_ptr, flags as i32,
                                               bdevtype_ptr, bdevdata_ptr,
-                                              newsize, ptr::null_mut());
+                                              newsize, argv_ptr);
       LxcContainer::parse_creation_result(cloned)
     }
   }
